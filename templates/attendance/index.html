@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+{% block title %}勤怠管理 — 社員管理システム{% endblock %}
+
+{% block content %}
+
+{# ── フィルター ── #}
+<div class="card">
+  <div class="card-header">
+    <h2>勤怠管理</h2>
+    <a href="{{ url_for('attendance.add') }}" class="btn btn-primary">＋ 勤怠登録</a>
+  </div>
+  <div class="card-body" style="padding-bottom:16px">
+    <form method="get" style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap">
+      <div class="form-group" style="margin-bottom:0">
+        <label for="employee_id">社員</label>
+        <select id="employee_id" name="employee_id" style="max-width:220px">
+          <option value="">— 全員 —</option>
+          {% for emp in employees %}
+          <option value="{{ emp.id }}"
+            {% if selected_employee_id == emp.id %}selected{% endif %}>
+            {{ emp.employee_id }} {{ emp.name }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group" style="margin-bottom:0">
+        <label for="month">対象月</label>
+        <input type="month" id="month" name="month"
+               value="{{ selected_month }}" style="max-width:180px">
+      </div>
+      <button type="submit" class="btn btn-secondary">絞り込み</button>
+      <a href="{{ url_for('attendance.index') }}" class="btn btn-secondary">リセット</a>
+    </form>
+  </div>
+</div>
+
+{# ── 月次集計 ── #}
+{% if summary %}
+<div class="card">
+  <p class="section-title">月次集計</p>
+  <table>
+    <thead>
+      <tr>
+        <th>社員番号</th>
+        <th>氏名</th>
+        <th>部署</th>
+        <th>勤務日数</th>
+        <th>合計勤務時間</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for s in summary %}
+      <tr>
+        <td class="emp-id">{{ s.employee.employee_id }}</td>
+        <td>{{ s.employee.name }}</td>
+        <td>
+          {% if s.employee.department %}
+            <span class="dept-tag">{{ s.employee.department.department_name }}</span>
+          {% else %}—{% endif %}
+        </td>
+        <td><strong>{{ s.days }}</strong> 日</td>
+        <td><strong>{{ "%.1f"|format(s.hours) }}</strong> 時間</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+{# ── 勤怠一覧 ── #}
+<div class="card">
+  <p class="section-title">勤怠一覧<span class="badge">{{ records | length }} 件</span></p>
+  <table>
+    <thead>
+      <tr>
+        <th>勤務日</th>
+        <th>社員番号</th>
+        <th>氏名</th>
+        <th>部署</th>
+        <th>出勤</th>
+        <th>退勤</th>
+        <th>勤務時間</th>
+        <th>メモ</th>
+        <th>操作</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in records %}
+      <tr>
+        <td>{{ r.work_date }}</td>
+        <td class="emp-id">{{ r.employee.employee_id }}</td>
+        <td>{{ r.employee.name }}</td>
+        <td>
+          {% if r.employee.department %}
+            <span class="dept-tag">{{ r.employee.department.department_name }}</span>
+          {% else %}—{% endif %}
+        </td>
+        <td>{{ r.clock_in.strftime('%H:%M') if r.clock_in else '—' }}</td>
+        <td>{{ r.clock_out.strftime('%H:%M') if r.clock_out else '—' }}</td>
+        <td>
+          {% if r.work_hours is not none %}
+            {{ "%.1f"|format(r.work_hours) }} h
+          {% else %}—{% endif %}
+        </td>
+        <td style="max-width:160px;white-space:normal;font-size:0.82rem;color:#6b7280">
+          {{ r.note or '' }}
+        </td>
+        <td>
+          <a href="{{ url_for('attendance.edit', id=r.id) }}"
+             class="btn btn-secondary btn-sm">編集</a>
+          <form method="post" action="{{ url_for('attendance.delete', id=r.id) }}"
+                style="display:inline"
+                onsubmit="return confirm('この勤怠データを削除してよろしいですか？')">
+            <button type="submit" class="btn btn-danger btn-sm">削除</button>
+          </form>
+        </td>
+      </tr>
+      {% else %}
+      <tr>
+        <td colspan="9" style="text-align:center;color:#9ca3af;padding:32px">
+          勤怠データがありません
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

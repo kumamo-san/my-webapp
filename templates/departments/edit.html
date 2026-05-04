@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}部署編集 — 社員管理システム{% endblock %}
+
+{% block content %}
+<div class="card">
+  <div class="card-header">
+    <h2>部署編集</h2>
+  </div>
+  <div class="card-body">
+    <form method="post">
+      <div class="form-group">
+        <label for="department_code">部署コード</label>
+        <input type="text" id="department_code" name="department_code"
+               maxlength="10" required value="{{ department.department_code }}">
+      </div>
+      <div class="form-group">
+        <label for="department_name">部署名</label>
+        <input type="text" id="department_name" name="department_name"
+               maxlength="100" required value="{{ department.department_name }}">
+      </div>
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary">更新する</button>
+        <a href="{{ url_for('departments.index') }}" class="btn btn-secondary">キャンセル</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

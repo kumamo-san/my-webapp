@@ -14,27 +14,47 @@
       min-height: 100vh;
     }
 
+    /* ── Header ── */
     header {
       background: #1a56db;
-      color: #fff;
-      padding: 16px 32px;
+      padding: 14px 32px;
     }
-
     header a {
       color: #fff;
       text-decoration: none;
-      font-size: 1.4rem;
-      font-weight: 600;
+      font-size: 1.2rem;
+      font-weight: 700;
       letter-spacing: 0.04em;
     }
 
+    /* ── Nav ── */
+    nav {
+      background: #1648c8;
+      padding: 0 28px;
+      display: flex;
+      gap: 2px;
+    }
+    nav a {
+      display: block;
+      padding: 10px 18px;
+      color: rgba(255,255,255,.75);
+      text-decoration: none;
+      font-size: 0.88rem;
+      font-weight: 500;
+      border-bottom: 3px solid transparent;
+      transition: color .15s, border-color .15s;
+    }
+    nav a:hover { color: #fff; }
+    nav a.active { color: #fff; border-bottom-color: #fff; }
+
+    /* ── Main ── */
     main {
-      max-width: 1100px;
-      margin: 40px auto;
+      max-width: 1200px;
+      margin: 36px auto;
       padding: 0 24px;
     }
 
-    /* Flash messages */
+    /* ── Flash messages ── */
     .alert {
       padding: 12px 16px;
       border-radius: 6px;
@@ -44,76 +64,60 @@
     .alert.success { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
     .alert.error   { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
 
-    /* Card */
+    /* ── Card ── */
     .card {
       background: #fff;
       border-radius: 8px;
       box-shadow: 0 1px 4px rgba(0,0,0,.1);
       overflow: hidden;
+      margin-bottom: 28px;
     }
-
     .card-header {
-      padding: 20px 24px;
+      padding: 18px 24px;
       border-bottom: 1px solid #e5e7eb;
       display: flex;
       align-items: center;
       justify-content: space-between;
     }
+    .card-header h2 { font-size: 0.97rem; font-weight: 600; }
+    .card-body { padding: 24px; }
 
-    .card-header h2 { font-size: 1rem; font-weight: 600; }
-
-    .card-body { padding: 28px 24px; }
-
-    /* Badges */
-    .badge {
-      background: #e0e7ff;
-      color: #3730a3;
-      font-size: 0.78rem;
-      font-weight: 600;
-      padding: 2px 10px;
-      border-radius: 9999px;
-      margin-left: 8px;
-    }
-
-    /* Table */
+    /* ── Table ── */
     table { width: 100%; border-collapse: collapse; }
-
     thead { background: #f9fafb; }
-
     th {
-      padding: 12px 16px;
+      padding: 11px 16px;
       text-align: left;
-      font-size: 0.78rem;
+      font-size: 0.76rem;
       font-weight: 600;
       color: #6b7280;
       text-transform: uppercase;
       letter-spacing: 0.06em;
       border-bottom: 1px solid #e5e7eb;
     }
-
     td {
-      padding: 14px 16px;
-      font-size: 0.9rem;
+      padding: 13px 16px;
+      font-size: 0.88rem;
       border-bottom: 1px solid #f0f2f5;
       white-space: nowrap;
     }
-
     tbody tr:last-child td { border-bottom: none; }
     tbody tr:hover { background: #f5f7ff; }
 
-    .emp-id { font-family: monospace; color: #6b7280; font-size: 0.85rem; }
-
+    .emp-id   { font-family: monospace; color: #6b7280; font-size: 0.83rem; }
     .dept-tag {
       display: inline-block;
-      background: #f0fdf4;
-      color: #166534;
+      background: #f0fdf4; color: #166534;
       border: 1px solid #bbf7d0;
-      font-size: 0.78rem;
-      padding: 2px 8px;
-      border-radius: 4px;
+      font-size: 0.76rem; padding: 2px 8px; border-radius: 4px;
+    }
+    .badge {
+      background: #e0e7ff; color: #3730a3;
+      font-size: 0.76rem; font-weight: 600;
+      padding: 2px 10px; border-radius: 9999px; margin-left: 8px;
     }
 
-    /* Buttons */
+    /* ── Buttons ── */
     .btn {
       display: inline-block;
       padding: 8px 18px;
@@ -129,43 +133,56 @@
     .btn-primary   { background: #1a56db; color: #fff; }
     .btn-secondary { background: #e5e7eb; color: #374151; }
     .btn-danger    { background: #e02424; color: #fff; }
-    .btn-sm { padding: 5px 11px; font-size: 0.78rem; }
+    .btn-sm { padding: 4px 10px; font-size: 0.77rem; }
 
-    /* Form */
+    /* ── Form ── */
     .form-group { margin-bottom: 18px; }
-
     .form-group label {
       display: block;
-      font-size: 0.85rem;
-      font-weight: 600;
-      margin-bottom: 6px;
-      color: #374151;
+      font-size: 0.84rem; font-weight: 600;
+      margin-bottom: 6px; color: #374151;
     }
-
-    .form-group input {
-      width: 100%;
-      max-width: 480px;
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      width: 100%; max-width: 480px;
       padding: 9px 12px;
-      border: 1px solid #d1d5db;
-      border-radius: 6px;
-      font-size: 0.9rem;
-      color: #111827;
-      outline: none;
-      transition: border-color .15s;
+      border: 1px solid #d1d5db; border-radius: 6px;
+      font-size: 0.9rem; color: #111827;
+      outline: none; transition: border-color .15s;
+      background: #fff;
     }
-
-    .form-group input:focus {
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
       border-color: #1a56db;
       box-shadow: 0 0 0 3px rgba(26,86,219,.12);
     }
-
+    .form-group .hint { font-size: 0.78rem; color: #9ca3af; margin-top: 4px; }
     .form-actions { display: flex; gap: 10px; margin-top: 28px; }
+
+    /* ── Section heading ── */
+    .section-title {
+      font-size: 0.84rem; font-weight: 600; color: #6b7280;
+      text-transform: uppercase; letter-spacing: 0.06em;
+      padding: 16px 24px 8px;
+      border-top: 1px solid #e5e7eb;
+    }
+    .section-title:first-child { border-top: none; }
   </style>
 </head>
 <body>
   <header>
-    <a href="{{ url_for('index') }}">社員管理システム</a>
+    <a href="{{ url_for('employees.index') }}">社員管理システム</a>
   </header>
+  <nav>
+    <a href="{{ url_for('employees.index') }}"
+       {% if request.blueprint == 'employees' %}class="active"{% endif %}>社員管理</a>
+    <a href="{{ url_for('departments.index') }}"
+       {% if request.blueprint == 'departments' %}class="active"{% endif %}>部署管理</a>
+    <a href="{{ url_for('attendance.index') }}"
+       {% if request.blueprint == 'attendance' %}class="active"{% endif %}>勤怠管理</a>
+  </nav>
   <main>
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}

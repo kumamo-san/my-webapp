@@ -1,144 +1,135 @@
 import csv
 import os
 
-from flask import Flask, flash, redirect, render_template, request, url_for
-from google.cloud.sql.connector import Connector
-import sqlalchemy
+from flask import Flask, redirect, url_for
 from sqlalchemy import text
+from sqlalchemy.orm import Session
 
-app = Flask(__name__)
-app.secret_key = os.environ.get("SECRET_KEY", "dev-only-secret")
-
-INSTANCE_CONNECTION_NAME = os.environ.get("INSTANCE_CONNECTION_NAME", "")
-DB_USER = os.environ.get("DB_USER", "")
-DB_PASS = os.environ.get("DB_PASS", "")
-DB_NAME = os.environ.get("DB_NAME", "")
-
-_connector = Connector()
-
-
-def _getconn():
-    return _connector.connect(
-        INSTANCE_CONNECTION_NAME,
-        "pg8000",
-        user=DB_USER,
-        password=DB_PASS,
-        db=DB_NAME,
-    )
-
-
-engine = sqlalchemy.create_engine("postgresql+pg8000://", creator=_getconn)
+from models import Department, Employee, engine
 
 CSV_PATH = os.path.join(os.path.dirname(__file__), "employees.csv")
 
 
-def init_db():
+def _init_db():
     with engine.connect() as conn:
+        # ── 1. departments テーブル作成 ───────────────────────────
         conn.execute(text("""
-            CREATE TABLE IF NOT EXISTS employees (
-                id          SERIAL PRIMARY KEY,
-                employee_id VARCHAR(10)  UNIQUE NOT NULL,
-                name        VARCHAR(100) NOT NULL,
-                department  VARCHAR(100) NOT NULL,
-                position    VARCHAR(100) NOT NULL,
-                join_date   DATE         NOT NULL
+            CREATE TABLE IF NOT EXISTS departments (
+                id               SERIAL PRIMARY KEY,
+                department_code  VARCHAR(10)  UNIQUE NOT NULL,
+                department_name  VARCHAR(100) NOT NULL
+            )
+        """))
+
+        # ── 2. employees スキーマ移行（Stage 2 → 3） ─────────────
+        cols = {r[0] for r in conn.execute(text("""
+            SELECT column_name FROM information_schema.columns
+            WHERE table_name = 'employees'
+        """))}
+
+        if "department" in cols and "department_id" not in cols:
+            # Stage 2 の department(VARCHAR) を department_id(FK) へ移行
+            conn.execute(text(
+                "ALTER TABLE employees ADD COLUMN department_id INTEGER"
+            ))
+            conn.commit()
+
+            rows = conn.execute(text(
+                "SELECT DISTINCT department FROM employees "
+                "WHERE department IS NOT NULL ORDER BY department"
+            )).fetchall()
+            for i, (name,) in enumerate(rows, 1):
+                conn.execute(text("""
+                    INSERT INTO departments (department_code, department_name)
+                    VALUES (:code, :name)
+                    ON CONFLICT (department_code) DO NOTHING
+                """), {"code": f"D{i:03d}", "name": name})
+            conn.commit()
+
+            conn.execute(text("""
+                UPDATE employees e
+                SET department_id = d.id
+                FROM departments d
+                WHERE e.department = d.department_name
+            """))
+            conn.execute(text(
+                "ALTER TABLE employees "
+                "ADD CONSTRAINT fk_employees_dept "
+                "FOREIGN KEY (department_id) REFERENCES departments(id)"
+            ))
+            conn.execute(text("ALTER TABLE employees DROP COLUMN department"))
+
+        elif "department_id" not in cols:
+            conn.execute(text(
+                "ALTER TABLE employees "
+                "ADD COLUMN department_id INTEGER REFERENCES departments(id)"
+            ))
+
+        # ── 3. attendance テーブル作成 ────────────────────────────
+        conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS attendance (
+                id           SERIAL PRIMARY KEY,
+                employee_id  INTEGER NOT NULL REFERENCES employees(id),
+                work_date    DATE    NOT NULL,
+                clock_in     TIME,
+                clock_out    TIME,
+                note         VARCHAR(200),
+                UNIQUE(employee_id, work_date)
             )
         """))
         conn.commit()
 
-        count = conn.execute(text("SELECT COUNT(*) FROM employees")).scalar()
-        if count == 0:
+    # ── 4. 初期データ投入（departments が空の場合のみ） ──────────
+    with Session(engine) as session:
+        if session.query(Department).count() == 0:
+            dept_map: dict[str, Department] = {}
             with open(CSV_PATH, encoding="utf-8", newline="") as f:
                 for row in csv.DictReader(f):
-                    conn.execute(text("""
-                        INSERT INTO employees (employee_id, name, department, position, join_date)
-                        VALUES (:eid, :name, :dept, :pos, :jd)
-                        ON CONFLICT (employee_id) DO NOTHING
-                    """), {
-                        "eid": row["社員番号"],
-                        "name": row["氏名"],
-                        "dept": row["部署"],
-                        "pos": row["役職"],
-                        "jd": row["入社日"],
-                    })
-            conn.commit()
+                    name = row["部署"]
+                    if name not in dept_map:
+                        d = Department(
+                            department_code=f"D{len(dept_map)+1:03d}",
+                            department_name=name,
+                        )
+                        session.add(d)
+                        dept_map[name] = d
+            session.flush()
+
+            if session.query(Employee).count() == 0:
+                with open(CSV_PATH, encoding="utf-8", newline="") as f:
+                    for row in csv.DictReader(f):
+                        session.add(Employee(
+                            employee_id=row["社員番号"],
+                            name=row["氏名"],
+                            department=dept_map[row["部署"]],
+                            position=row["役職"],
+                            join_date=row["入社日"],
+                        ))
+            session.commit()
 
 
-with app.app_context():
-    init_db()
+def create_app() -> Flask:
+    app = Flask(__name__)
+    app.secret_key = os.environ.get("SECRET_KEY", "dev-only-secret")
+
+    _init_db()
+
+    from blueprints.departments import bp as departments_bp
+    from blueprints.employees import bp as employees_bp
+    from blueprints.attendance import bp as attendance_bp
+
+    app.register_blueprint(departments_bp)
+    app.register_blueprint(employees_bp)
+    app.register_blueprint(attendance_bp)
+
+    @app.route("/")
+    def index():
+        return redirect(url_for("employees.index"))
+
+    return app
 
 
-@app.route("/")
-def index():
-    with engine.connect() as conn:
-        employees = conn.execute(text(
-            "SELECT id, employee_id, name, department, position, join_date "
-            "FROM employees ORDER BY employee_id"
-        )).mappings().all()
-    return render_template("index.html", employees=employees)
-
-
-@app.route("/add", methods=["GET", "POST"])
-def add():
-    if request.method == "POST":
-        with engine.connect() as conn:
-            conn.execute(text("""
-                INSERT INTO employees (employee_id, name, department, position, join_date)
-                VALUES (:eid, :name, :dept, :pos, :jd)
-            """), {
-                "eid": request.form["employee_id"],
-                "name": request.form["name"],
-                "dept": request.form["department"],
-                "pos": request.form["position"],
-                "jd": request.form["join_date"],
-            })
-            conn.commit()
-        flash("社員を登録しました。", "success")
-        return redirect(url_for("index"))
-    return render_template("add.html")
-
-
-@app.route("/edit/<int:id>", methods=["GET", "POST"])
-def edit(id):
-    if request.method == "POST":
-        with engine.connect() as conn:
-            conn.execute(text("""
-                UPDATE employees
-                SET employee_id=:eid, name=:name, department=:dept,
-                    position=:pos, join_date=:jd
-                WHERE id=:id
-            """), {
-                "id": id,
-                "eid": request.form["employee_id"],
-                "name": request.form["name"],
-                "dept": request.form["department"],
-                "pos": request.form["position"],
-                "jd": request.form["join_date"],
-            })
-            conn.commit()
-        flash("社員情報を更新しました。", "success")
-        return redirect(url_for("index"))
-
-    with engine.connect() as conn:
-        employee = conn.execute(text(
-            "SELECT id, employee_id, name, department, position, join_date "
-            "FROM employees WHERE id=:id"
-        ), {"id": id}).mappings().first()
-
-    if employee is None:
-        flash("社員が見つかりません。", "error")
-        return redirect(url_for("index"))
-    return render_template("edit.html", employee=employee)
-
-
-@app.route("/delete/<int:id>", methods=["POST"])
-def delete(id):
-    with engine.connect() as conn:
-        conn.execute(text("DELETE FROM employees WHERE id=:id"), {"id": id})
-        conn.commit()
-    flash("社員を削除しました。", "success")
-    return redirect(url_for("index"))
-
+app = create_app()
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8080))

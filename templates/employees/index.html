@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}社員一覧 — 社員管理システム{% endblock %}
+
+{% block content %}
+<div class="card">
+  <div class="card-header">
+    <h2>社員一覧<span class="badge">{{ employees | length }} 件</span></h2>
+    <a href="{{ url_for('employees.add') }}" class="btn btn-primary">＋ 新規登録</a>
+  </div>
+  <table>
+    <thead>
+      <tr>
+        <th>社員番号</th>
+        <th>氏名</th>
+        <th>部署</th>
+        <th>役職</th>
+        <th>入社日</th>
+        <th>操作</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for emp in employees %}
+      <tr>
+        <td class="emp-id">{{ emp.employee_id }}</td>
+        <td>{{ emp.name }}</td>
+        <td>
+          {% if emp.department %}
+            <span class="dept-tag">{{ emp.department.department_name }}</span>
+          {% else %}
+            <span style="color:#9ca3af">—</span>
+          {% endif %}
+        </td>
+        <td>{{ emp.position }}</td>
+        <td>{{ emp.join_date }}</td>
+        <td>
+          <a href="{{ url_for('employees.edit', id=emp.id) }}"
+             class="btn btn-secondary btn-sm">編集</a>
+          <form method="post" action="{{ url_for('employees.delete', id=emp.id) }}"
+                style="display:inline"
+                onsubmit="return confirm('{{ emp.name }} を削除してよろしいですか？\n関連する勤怠データも削除されます。')">
+            <button type="submit" class="btn btn-danger btn-sm">削除</button>
+          </form>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="6" style="text-align:center;color:#9ca3af;padding:32px">社員データがありません</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

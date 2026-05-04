@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}部署管理 — 社員管理システム{% endblock %}
+
+{% block content %}
+<div class="card">
+  <div class="card-header">
+    <h2>部署一覧<span class="badge">{{ departments | length }} 件</span></h2>
+    <a href="{{ url_for('departments.add') }}" class="btn btn-primary">＋ 新規登録</a>
+  </div>
+  <table>
+    <thead>
+      <tr>
+        <th>部署コード</th>
+        <th>部署名</th>
+        <th>操作</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for dept in departments %}
+      <tr>
+        <td class="emp-id">{{ dept.department_code }}</td>
+        <td>{{ dept.department_name }}</td>
+        <td>
+          <a href="{{ url_for('departments.edit', id=dept.id) }}"
+             class="btn btn-secondary btn-sm">編集</a>
+          <form method="post" action="{{ url_for('departments.delete', id=dept.id) }}"
+                style="display:inline"
+                onsubmit="return confirm('{{ dept.department_name }} を削除してよろしいですか？')">
+            <button type="submit" class="btn btn-danger btn-sm">削除</button>
+          </form>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="3" style="text-align:center;color:#9ca3af;padding:32px">部署データがありません</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
