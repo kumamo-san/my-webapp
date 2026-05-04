@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block title %}社員登録 — 社員管理システム{% endblock %}
+
+{% block content %}
+<div class="card">
+  <div class="card-header">
+    <h2>社員登録</h2>
+  </div>
+  <div class="card-body">
+    <form method="post">
+      <div class="form-group">
+        <label for="employee_id">社員番号</label>
+        <input type="text" id="employee_id" name="employee_id"
+               maxlength="10" required placeholder="例: E011">
+      </div>
+      <div class="form-group">
+        <label for="name">氏名</label>
+        <input type="text" id="name" name="name"
+               maxlength="100" required>
+      </div>
+      <div class="form-group">
+        <label for="department">部署</label>
+        <input type="text" id="department" name="department"
+               maxlength="100" required>
+      </div>
+      <div class="form-group">
+        <label for="position">役職</label>
+        <input type="text" id="position" name="position"
+               maxlength="100" required>
+      </div>
+      <div class="form-group">
+        <label for="join_date">入社日</label>
+        <input type="date" id="join_date" name="join_date" required>
+      </div>
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary">登録する</button>
+        <a href="{{ url_for('index') }}" class="btn btn-secondary">キャンセル</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
